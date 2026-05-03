@@ -8,8 +8,6 @@ services:
       MYSQL_DATABASE: helma
       MYSQL_USER: helma
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    ports:
-      - "3307:3306"
     volumes:
       - helma_mysql_data:/var/lib/mysql
     networks:
@@ -41,10 +39,30 @@ services:
       MAILJET_SECRET_KEY: ${MAILJET_SECRET_KEY}
       MAILJET_FROM_EMAIL: ${MAILJET_FROM_EMAIL}
       MAILJET_FROM_NAME: ${MAILJET_FROM_NAME}
-    ports:
-      - "8084:8080"
     volumes:
       - helma_uploads:/app/uploads
+    networks:
+      - helma-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  helma-auth-service:
+    build:
+      context: ../helma-auth-service
+      dockerfile: Dockerfile
+    container_name: helma-auth-service
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      APP_JWT_SECRET: ${APP_JWT_SECRET}
     networks:
       - helma-net
     healthcheck:
@@ -63,14 +81,20 @@ services:
     depends_on:
       helma-backend:
         condition: service_healthy
+      helma-auth-service:
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
       APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS}
       APP_JWT_SECRET: ${APP_JWT_SECRET}
-    ports:
-      - "8080:8080"
     networks:
       - helma-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
   nginx:
     build:
@@ -79,7 +103,8 @@ services:
     container_name: helma-nginx
     restart: unless-stopped
     depends_on:
-      - api-gateway
+      api-gateway:
+        condition: service_healthy
     ports:
       - "80:80"
     volumes:
