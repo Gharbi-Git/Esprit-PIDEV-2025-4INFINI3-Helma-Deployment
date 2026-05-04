@@ -18,11 +18,11 @@ services:
       timeout: 5s
       retries: 10
 
-  helma-backend:
+  helma-crowdfunding-service:
     build:
       context: ../helma-backend
       dockerfile: Dockerfile
-    container_name: helma-backend
+    container_name: helma-crowdfunding-service
     restart: unless-stopped
     depends_on:
       mysql:
@@ -79,7 +79,7 @@ services:
     container_name: helma-api-gateway
     restart: unless-stopped
     depends_on:
-      helma-backend:
+      helma-crowdfunding-service:
         condition: service_healthy
       helma-auth-service:
         condition: service_healthy
