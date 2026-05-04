@@ -20,7 +20,7 @@ services:
 
   helma-crowdfunding-service:
     build:
-      context: ../helma-backend
+      context: ../helma-crowdfunding-service
       dockerfile: Dockerfile
     container_name: helma-crowdfunding-service
     restart: unless-stopped
