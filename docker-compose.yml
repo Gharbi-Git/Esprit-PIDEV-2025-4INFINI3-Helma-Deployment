@@ -1,4 +1,4 @@
-services:
+﻿services:
   mysql:
     image: mysql:8.4
     container_name: helma-mysql
@@ -63,6 +63,8 @@ services:
       SPRING_PROFILES_ACTIVE: docker
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       APP_JWT_SECRET: ${APP_JWT_SECRET}
+      APP_ADMIN_EMAIL: ${APP_ADMIN_EMAIL}
+      APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD}
     networks:
       - helma-net
     healthcheck:
@@ -72,6 +74,54 @@ services:
       retries: 12
       start_period: 30s
 
+  helma-microleasing-service:
+    build:
+      context: ../helma-microleasing-service
+      dockerfile: Dockerfile
+    container_name: helma-microleasing-service
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      APP_JWT_SECRET: ${APP_JWT_SECRET}
+      LEASING_MAIL_USERNAME: ${LEASING_MAIL_USERNAME}
+      LEASING_MAIL_PASSWORD: ${LEASING_MAIL_PASSWORD}
+      FLASK_API_URL: ${FLASK_API_URL}
+    networks:
+      - helma-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  helma-saving-goals-service:
+    build:
+      context: ../helma-saving-goals-service
+      dockerfile: Dockerfile
+    container_name: helma-saving-goals-service
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      APP_JWT_SECRET: ${APP_JWT_SECRET}
+      AI_MODEL_BASE_URL: ${AI_MODEL_BASE_URL}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+    networks:
+      - helma-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
   api-gateway:
     build:
       context: ../helma-api-gateway
@@ -82,6 +132,10 @@ services:
       helma-crowdfunding-service:
         condition: service_healthy
       helma-auth-service:
+        condition: service_healthy
+      helma-microleasing-service:
+        condition: service_healthy
+      helma-saving-goals-service:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
