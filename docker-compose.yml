@@ -1,4 +1,4 @@
-﻿services:
+services:
   mysql:
     image: mysql:8.4
     container_name: helma-mysql
@@ -122,6 +122,55 @@
       timeout: 5s
       retries: 12
       start_period: 30s
+  helma-budgeting-service:
+    build:
+      context: ../helma-budgeting-service
+      dockerfile: Dockerfile
+    container_name: helma-budgeting-service
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      APP_JWT_SECRET: ${APP_JWT_SECRET}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+    networks:
+      - helma-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+  helma-transaction-service:
+    build:
+      context: ../helma-transaction-service
+      dockerfile: Dockerfile
+    container_name: helma-transaction-service
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      APP_JWT_SECRET: ${APP_JWT_SECRET}
+      TRANSACTION_MAIL_HOST: ${TRANSACTION_MAIL_HOST}
+      TRANSACTION_MAIL_PORT: ${TRANSACTION_MAIL_PORT}
+      TRANSACTION_MAIL_USERNAME: ${TRANSACTION_MAIL_USERNAME}
+      TRANSACTION_MAIL_PASSWORD: ${TRANSACTION_MAIL_PASSWORD}
+      TRANSACTION_MAIL_FROM: ${TRANSACTION_MAIL_FROM}
+      TRANSACTION_ALERT_TO: ${TRANSACTION_ALERT_TO}
+    networks:
+      - helma-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
   api-gateway:
     build:
       context: ../helma-api-gateway
@@ -137,6 +186,10 @@
         condition: service_healthy
       helma-saving-goals-service:
         condition: service_healthy
+      helma-budgeting-service:
+        condition: service_healthy
+      helma-transaction-service:
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
       APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS}
@@ -149,7 +202,6 @@
       timeout: 5s
       retries: 12
       start_period: 20s
-
   nginx:
     build:
       context: ../helma-frontend
