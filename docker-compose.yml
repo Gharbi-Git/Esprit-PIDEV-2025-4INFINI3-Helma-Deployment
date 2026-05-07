@@ -90,6 +90,12 @@ services:
       LEASING_MAIL_USERNAME: ${LEASING_MAIL_USERNAME}
       LEASING_MAIL_PASSWORD: ${LEASING_MAIL_PASSWORD}
       FLASK_API_URL: ${FLASK_API_URL}
+      LEASING_USER_SERVICE_BASE_URL: ${LEASING_USER_SERVICE_BASE_URL}
+      LEASING_STRIPE_SECRET_KEY: ${LEASING_STRIPE_SECRET_KEY}
+      LEASING_STRIPE_PUBLIC_KEY: ${LEASING_STRIPE_PUBLIC_KEY}
+      LEASING_MAIL_HOST: ${LEASING_MAIL_HOST}
+      LEASING_MAIL_PORT: ${LEASING_MAIL_PORT}
+      LEASING_PDF_DIRECTORY: ${LEASING_PDF_DIRECTORY}
     networks:
       - helma-net
     healthcheck:
@@ -217,7 +223,6 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
       - helma-net
-
 volumes:
   helma_mysql_data:
   helma_uploads:
